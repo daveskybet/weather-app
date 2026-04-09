@@ -6,6 +6,15 @@ export type WeatherCondition =
   | 'windy'
   | 'stormy';
 
+export interface DailyForecast {
+  date: string; // ISO date e.g. "2024-01-15"
+  condition: WeatherCondition;
+  description: string;
+  tempMax: number;
+  tempMin: number;
+  precipitationProbability: number;
+}
+
 export interface WeatherData {
   city: string;
   temperature: number;
@@ -15,6 +24,7 @@ export interface WeatherData {
   description: string;
   windSpeed: number;
   updatedAt: Date;
+  forecast: DailyForecast[];
 }
 
 export interface WeatherState {

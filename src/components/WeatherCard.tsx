@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ForecastRow } from '@/components/ForecastRow';
 import { WeatherData } from '@/types';
 
 const CONDITION_EMOJI: Record<string, string> = {
@@ -19,7 +20,12 @@ export function WeatherCard({ data }: WeatherCardProps) {
   const emoji = CONDITION_EMOJI[data.condition] ?? '🌡️';
 
   return (
-    <View style={styles.card} testID="weather-card">
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      testID="weather-card"
+    >
       <Text style={styles.city} testID="weather-city">
         {data.city}
       </Text>
@@ -51,17 +57,28 @@ export function WeatherCard({ data }: WeatherCardProps) {
           </Text>
         </View>
       </View>
-    </View>
+
+      {data.forecast.length > 0 && (
+        <View style={styles.forecastSection} testID="forecast-section">
+          <Text style={styles.forecastTitle}>7-Day Forecast</Text>
+          {data.forecast.map((item, index) => (
+            <ForecastRow key={item.date} item={item} index={index} />
+          ))}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  scrollView: {
+    width: '100%',
+  },
+  scrollContent: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',
-    width: '100%',
   },
   city: {
     fontSize: 28,
@@ -107,5 +124,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  forecastSection: {
+    width: '100%',
+    marginTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.2)',
+    paddingTop: 20,
+  },
+  forecastTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.7)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
   },
 });

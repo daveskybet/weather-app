@@ -14,6 +14,7 @@ const mockWeatherData: WeatherData = {
   description: 'Partly cloudy with a chance of fog',
   windSpeed: 14,
   updatedAt: new Date('2024-01-01'),
+  forecast: [],
 };
 
 // Spy on the singleton service used by HomeScreen

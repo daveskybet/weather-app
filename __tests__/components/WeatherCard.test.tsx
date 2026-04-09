@@ -1,7 +1,34 @@
 import { render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { WeatherCard } from '@/components/WeatherCard';
-import { WeatherData } from '@/types';
+import { DailyForecast, WeatherData } from '@/types';
+
+const mockForecast: DailyForecast[] = [
+  {
+    date: '2024-06-01',
+    condition: 'sunny',
+    description: 'Clear sky',
+    tempMax: 24,
+    tempMin: 14,
+    precipitationProbability: 0,
+  },
+  {
+    date: '2024-06-02',
+    condition: 'cloudy',
+    description: 'Partly cloudy',
+    tempMax: 20,
+    tempMin: 12,
+    precipitationProbability: 20,
+  },
+  {
+    date: '2024-06-03',
+    condition: 'rainy',
+    description: 'Moderate rain',
+    tempMax: 16,
+    tempMin: 11,
+    precipitationProbability: 80,
+  },
+];
 
 const mockData: WeatherData = {
   city: 'Tokyo',
@@ -12,6 +39,7 @@ const mockData: WeatherData = {
   description: 'Clear skies',
   windSpeed: 8,
   updatedAt: new Date('2024-06-01'),
+  forecast: mockForecast,
 };
 
 describe('WeatherCard', () => {
@@ -50,5 +78,27 @@ describe('WeatherCard', () => {
   it('has the weather-card testID', () => {
     render(<WeatherCard data={mockData} />);
     expect(screen.getByTestId('weather-card')).toBeTruthy();
+  });
+
+  it('renders the forecast section when forecast data is present', () => {
+    render(<WeatherCard data={mockData} />);
+    expect(screen.getByTestId('forecast-section')).toBeTruthy();
+  });
+
+  it('renders a row for each forecast day', () => {
+    render(<WeatherCard data={mockData} />);
+    expect(screen.getByTestId('forecast-row-0')).toBeTruthy();
+    expect(screen.getByTestId('forecast-row-1')).toBeTruthy();
+    expect(screen.getByTestId('forecast-row-2')).toBeTruthy();
+  });
+
+  it('renders max/min temperature for a forecast row', () => {
+    render(<WeatherCard data={mockData} />);
+    expect(screen.getByTestId('forecast-temp-0')).toHaveTextContent('24° / 14°');
+  });
+
+  it('does not render the forecast section when forecast is empty', () => {
+    render(<WeatherCard data={{ ...mockData, forecast: [] }} />);
+    expect(screen.queryByTestId('forecast-section')).toBeNull();
   });
 });

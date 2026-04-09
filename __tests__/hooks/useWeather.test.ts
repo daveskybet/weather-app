@@ -12,6 +12,7 @@ const mockWeatherData: WeatherData = {
   description: 'Light rain',
   windSpeed: 20,
   updatedAt: new Date('2024-01-01'),
+  forecast: [],
 };
 
 function makeMockService(overrides?: Partial<WeatherService>): WeatherService {
