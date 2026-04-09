@@ -1,70 +1,8 @@
-import { DailyForecast, WeatherCondition, WeatherData } from '@/types';
+import { DailyForecast, HourlyForecast, WeatherData } from '@/types';
+import { wmoCondition, wmoDescription } from '@/utils/wmo';
 
 export interface WeatherService {
   fetchWeather: (city: string) => Promise<WeatherData>;
-}
-
-// WMO Weather Interpretation Codes → app condition
-const WMO_CONDITION: Record<number, WeatherCondition> = {
-  0: 'sunny',
-  1: 'sunny',
-  2: 'cloudy',
-  3: 'cloudy',
-  45: 'cloudy',
-  48: 'cloudy',
-  51: 'rainy',
-  53: 'rainy',
-  55: 'rainy',
-  61: 'rainy',
-  63: 'rainy',
-  65: 'rainy',
-  71: 'snowy',
-  73: 'snowy',
-  75: 'snowy',
-  77: 'snowy',
-  80: 'rainy',
-  81: 'rainy',
-  82: 'rainy',
-  85: 'snowy',
-  86: 'snowy',
-  95: 'stormy',
-  96: 'stormy',
-  99: 'stormy',
-};
-
-const WMO_DESCRIPTION: Record<number, string> = {
-  0: 'Clear sky',
-  1: 'Mainly clear',
-  2: 'Partly cloudy',
-  3: 'Overcast',
-  45: 'Fog',
-  48: 'Rime fog',
-  51: 'Light drizzle',
-  53: 'Moderate drizzle',
-  55: 'Heavy drizzle',
-  61: 'Slight rain',
-  63: 'Moderate rain',
-  65: 'Heavy rain',
-  71: 'Slight snow',
-  73: 'Moderate snow',
-  75: 'Heavy snow',
-  77: 'Snow grains',
-  80: 'Slight showers',
-  81: 'Moderate showers',
-  82: 'Violent showers',
-  85: 'Slight snow showers',
-  86: 'Heavy snow showers',
-  95: 'Thunderstorm',
-  96: 'Thunderstorm with hail',
-  99: 'Thunderstorm with heavy hail',
-};
-
-function wmoCondition(code: number): WeatherCondition {
-  return WMO_CONDITION[code] ?? 'cloudy';
-}
-
-function wmoDescription(code: number): string {
-  return WMO_DESCRIPTION[code] ?? 'Unknown conditions';
 }
 
 interface GeocodingResult {
@@ -90,6 +28,12 @@ interface ForecastResponse {
     temperature_2m_min: number[];
     precipitation_probability_max: number[];
   };
+  hourly: {
+    time: string[]; // "2024-01-01T14:00"
+    temperature_2m: number[];
+    weather_code: number[];
+    precipitation_probability: number[];
+  };
 }
 
 export const weatherService: WeatherService = {
@@ -107,7 +51,7 @@ export const weatherService: WeatherService = {
     }
     const { name, latitude, longitude } = geoData.results[0];
 
-    // Step 2: Fetch current conditions + 7-day forecast
+    // Step 2: Fetch current conditions + 7-day daily + hourly breakdown
     const forecastUrl = new URL('https://api.open-meteo.com/v1/forecast');
     forecastUrl.searchParams.set('latitude', String(latitude));
     forecastUrl.searchParams.set('longitude', String(longitude));
@@ -119,6 +63,10 @@ export const weatherService: WeatherService = {
       'daily',
       'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
     );
+    forecastUrl.searchParams.set(
+      'hourly',
+      'temperature_2m,weather_code,precipitation_probability'
+    );
     forecastUrl.searchParams.set('wind_speed_unit', 'kmh');
     forecastUrl.searchParams.set('timezone', 'auto');
     forecastUrl.searchParams.set('forecast_days', '7');
@@ -129,7 +77,22 @@ export const weatherService: WeatherService = {
     }
     const forecastData = (await forecastRes.json()) as ForecastResponse;
 
-    const { current, daily } = forecastData;
+    const { current, daily, hourly } = forecastData;
+
+    // Group hourly entries by date
+    const hourlyByDate: Record<string, HourlyForecast[]> = {};
+    for (let i = 0; i < hourly.time.length; i++) {
+      const timeStr = hourly.time[i]; // "2024-01-01T14:00"
+      const date = timeStr.slice(0, 10); // "2024-01-01"
+      const time = timeStr.slice(11);    // "14:00"
+      if (!hourlyByDate[date]) hourlyByDate[date] = [];
+      hourlyByDate[date].push({
+        time,
+        temperature: Math.round(hourly.temperature_2m[i]),
+        condition: wmoCondition(hourly.weather_code[i]),
+        precipitationProbability: hourly.precipitation_probability[i],
+      });
+    }
 
     const forecast: DailyForecast[] = daily.time.map((date, i) => ({
       date,
@@ -138,6 +101,7 @@ export const weatherService: WeatherService = {
       tempMax: Math.round(daily.temperature_2m_max[i]),
       tempMin: Math.round(daily.temperature_2m_min[i]),
       precipitationProbability: daily.precipitation_probability_max[i],
+      hourly: hourlyByDate[date] ?? [],
     }));
 
     return {

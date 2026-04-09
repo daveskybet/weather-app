@@ -6,6 +6,21 @@ const mockGeoResponse = {
   ],
 };
 
+const DAILY_DATES = [
+  '2024-01-01',
+  '2024-01-02',
+  '2024-01-03',
+  '2024-01-04',
+  '2024-01-05',
+  '2024-01-06',
+  '2024-01-07',
+];
+
+// Generate 168 hourly time strings (7 days × 24 hours)
+const hourlyTimes = DAILY_DATES.flatMap((date) =>
+  Array.from({ length: 24 }, (_, h) => `${date}T${String(h).padStart(2, '0')}:00`)
+);
+
 const mockForecastResponse = {
   current: {
     temperature_2m: 17.8,
@@ -15,19 +30,17 @@ const mockForecastResponse = {
     weather_code: 2,
   },
   daily: {
-    time: [
-      '2024-01-01',
-      '2024-01-02',
-      '2024-01-03',
-      '2024-01-04',
-      '2024-01-05',
-      '2024-01-06',
-      '2024-01-07',
-    ],
+    time: DAILY_DATES,
     weather_code: [2, 61, 63, 0, 3, 95, 71],
     temperature_2m_max: [18, 14, 12, 22, 19, 11, 8],
     temperature_2m_min: [10, 9, 8, 14, 12, 7, 2],
     precipitation_probability_max: [10, 70, 90, 0, 30, 85, 60],
+  },
+  hourly: {
+    time: hourlyTimes,
+    temperature_2m: Array.from({ length: 168 }, (_, i) => 10 + (i % 24)),
+    weather_code: Array(168).fill(2),
+    precipitation_probability: Array(168).fill(20),
   },
 };
 
@@ -87,6 +100,30 @@ describe('weatherService', () => {
     expect(data.forecast[3].condition).toBe('sunny');   // code 0
     expect(data.forecast[5].condition).toBe('stormy');  // code 95
     expect(data.forecast[6].condition).toBe('snowy');   // code 71
+  });
+
+  it('attaches 24 hourly entries to each forecast day', async () => {
+    mockFetch(mockGeoResponse, mockForecastResponse);
+    const data = await weatherService.fetchWeather('London');
+
+    expect(data.forecast[0].hourly).toHaveLength(24);
+    expect(data.forecast[0].hourly[0]).toMatchObject({
+      time: '00:00',
+      temperature: expect.any(Number),
+      condition: 'cloudy',
+      precipitationProbability: 20,
+    });
+    expect(data.forecast[0].hourly[14].time).toBe('14:00');
+  });
+
+  it('groups hourly entries into the correct day', async () => {
+    mockFetch(mockGeoResponse, mockForecastResponse);
+    const data = await weatherService.fetchWeather('London');
+
+    // All 7 days should each have 24 hours
+    data.forecast.forEach((day) => {
+      expect(day.hourly).toHaveLength(24);
+    });
   });
 
   it('throws when the city is not found', async () => {

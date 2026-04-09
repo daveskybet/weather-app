@@ -6,6 +6,13 @@ export type WeatherCondition =
   | 'windy'
   | 'stormy';
 
+export interface HourlyForecast {
+  time: string; // "HH:00" e.g. "06:00", "14:00"
+  temperature: number;
+  condition: WeatherCondition;
+  precipitationProbability: number;
+}
+
 export interface DailyForecast {
   date: string; // ISO date e.g. "2024-01-15"
   condition: WeatherCondition;
@@ -13,6 +20,7 @@ export interface DailyForecast {
   tempMax: number;
   tempMin: number;
   precipitationProbability: number;
+  hourly: HourlyForecast[];
 }
 
 export interface WeatherData {

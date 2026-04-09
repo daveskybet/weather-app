@@ -11,6 +11,7 @@ const mockForecast: DailyForecast[] = [
     tempMax: 24,
     tempMin: 14,
     precipitationProbability: 0,
+    hourly: [],
   },
   {
     date: '2024-06-02',
@@ -19,6 +20,7 @@ const mockForecast: DailyForecast[] = [
     tempMax: 20,
     tempMin: 12,
     precipitationProbability: 20,
+    hourly: [],
   },
   {
     date: '2024-06-03',
@@ -27,6 +29,7 @@ const mockForecast: DailyForecast[] = [
     tempMax: 16,
     tempMin: 11,
     precipitationProbability: 80,
+    hourly: [],
   },
 ];
 
@@ -85,16 +88,9 @@ describe('WeatherCard', () => {
     expect(screen.getByTestId('forecast-section')).toBeTruthy();
   });
 
-  it('renders a row for each forecast day', () => {
+  it('renders the forecast tab bar', () => {
     render(<WeatherCard data={mockData} />);
-    expect(screen.getByTestId('forecast-row-0')).toBeTruthy();
-    expect(screen.getByTestId('forecast-row-1')).toBeTruthy();
-    expect(screen.getByTestId('forecast-row-2')).toBeTruthy();
-  });
-
-  it('renders max/min temperature for a forecast row', () => {
-    render(<WeatherCard data={mockData} />);
-    expect(screen.getByTestId('forecast-temp-0')).toHaveTextContent('24° / 14°');
+    expect(screen.getByTestId('forecast-tab-bar')).toBeTruthy();
   });
 
   it('does not render the forecast section when forecast is empty', () => {

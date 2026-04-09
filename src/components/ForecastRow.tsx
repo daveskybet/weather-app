@@ -2,15 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { DailyForecast } from '@/types';
 import { formatDay } from '@/utils/formatDay';
-
-const CONDITION_EMOJI: Record<string, string> = {
-  sunny: '☀️',
-  cloudy: '☁️',
-  rainy: '🌧️',
-  snowy: '❄️',
-  windy: '💨',
-  stormy: '⛈️',
-};
+import { CONDITION_EMOJI } from '@/utils/emojis';
 
 interface ForecastRowProps {
   item: DailyForecast;
@@ -18,7 +10,7 @@ interface ForecastRowProps {
 }
 
 export function ForecastRow({ item, index }: ForecastRowProps) {
-  const emoji = CONDITION_EMOJI[item.condition] ?? '🌡️';
+  const emoji = CONDITION_EMOJI[item.condition] ?? '-';
   return (
     <View style={styles.forecastRow} testID={`forecast-row-${index}`}>
       <Text style={styles.forecastDay} testID={`forecast-day-${index}`}>

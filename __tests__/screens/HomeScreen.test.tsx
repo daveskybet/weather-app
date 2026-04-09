@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HomeScreen } from '@/screens/HomeScreen';
 import * as weatherServiceModule from '@/services/weatherService';
 import { WeatherData } from '@/types';
@@ -29,9 +28,7 @@ beforeEach(() => {
 
 function renderHomeScreen() {
   return render(
-    <SafeAreaProvider>
       <HomeScreen />
-    </SafeAreaProvider>
   );
 }
 

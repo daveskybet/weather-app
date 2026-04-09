@@ -1,23 +1,14 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ForecastRow } from '@/components/ForecastRow';
+import { ForecastTabs } from '@/components/ForecastTabs';
 import { WeatherData } from '@/types';
-
-const CONDITION_EMOJI: Record<string, string> = {
-  sunny: '☀️',
-  cloudy: '☁️',
-  rainy: '🌧️',
-  snowy: '❄️',
-  windy: '💨',
-  stormy: '⛈️',
-};
-
+import { CONDITION_EMOJI } from '@/utils/emojis';
 interface WeatherCardProps {
   data: WeatherData;
 }
 
 export function WeatherCard({ data }: WeatherCardProps) {
-  const emoji = CONDITION_EMOJI[data.condition] ?? '🌡️';
+  const emoji = CONDITION_EMOJI[data.condition] ?? '-';
 
   return (
     <ScrollView
@@ -61,9 +52,7 @@ export function WeatherCard({ data }: WeatherCardProps) {
       {data.forecast.length > 0 && (
         <View style={styles.forecastSection} testID="forecast-section">
           <Text style={styles.forecastTitle}>7-Day Forecast</Text>
-          {data.forecast.map((item, index) => (
-            <ForecastRow key={item.date} item={item} index={index} />
-          ))}
+          <ForecastTabs forecast={data.forecast} />
         </View>
       )}
     </ScrollView>
@@ -77,7 +66,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 24,
-    padding: 32,
+    paddingHorizontal: 16,
+    paddingVertical: 32,
     alignItems: 'center',
   },
   city: {

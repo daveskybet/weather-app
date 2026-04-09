@@ -10,6 +10,7 @@ const baseItem: DailyForecast = {
   tempMax: 16,
   tempMin: 9,
   precipitationProbability: 80,
+  hourly: [],
 };
 
 describe('ForecastRow', () => {

@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CityInput } from '@/components/CityInput';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -16,12 +16,13 @@ import { useWeather } from '@/hooks/useWeather';
 import { weatherService } from '@/services/weatherService';
 
 export function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const { data, isLoading, error, city, setCity, refresh } = useWeather(
     weatherService
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -51,7 +52,7 @@ export function HomeScreen() {
           </Pressable>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
