@@ -99,6 +99,10 @@ The codebase is layered deliberately:
 - **Components** — the component composition pattern ensures each component is small enough to be understood in isolation. Components receive data as props and render. No network calls, no business logic. 
 - **Screen** — composes components and calls the hook. It does not know what services exist.
 
+### Expo
+
+Expo simplifies the development experience in a React native app compared to vanilla RN, as all config is kept in json files and easily inspected source with `ios`/`android` directories being generated cleanly for each build, compared to vanilla RN's constantly evolving native directories and compiled files (see Xcode's internal files when changing settings, iconsets, etc). Expo also improves the developer/collaboration experience with Expo Go and development builds that can be shared without having to align on Xcode/Android Studio versions. Expo also maintains a large native component system allowing easy integration of native features and transferring of functionality to the native thread to ease JS memory pressures/performance. 
+
 ### SWR for data fetching
 
 SWR provides caching, deduplication, and revalidation without requiring extra logic in the app. The two `useSWR` calls are chained — the forecast key is the resolved `GeoLocation` object, so the forecast only fetches once geocoding has succeeded and returns `null` (skipped) if geocoding is still in flight or has errored.
