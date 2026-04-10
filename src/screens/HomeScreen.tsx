@@ -13,13 +13,10 @@ import { ErrorMessage } from '@/components/ErrorMessage';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { WeatherCard } from '@/components/WeatherCard';
 import { useWeather } from '@/hooks/useWeather';
-import { weatherService } from '@/services/weatherService';
 
 export function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { data, isLoading, error, city, setCity, refresh } = useWeather(
-    weatherService
-  );
+  const { data, isLoading, error, city, setCity, refresh } = useWeather();
 
   return (
     <View style={[styles.safeArea, { paddingTop: insets.top }]}>

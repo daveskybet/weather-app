@@ -1,48 +1,56 @@
-import { useCallback, useEffect, useState } from 'react';
-import { WeatherService } from '@/services/weatherService';
-import { WeatherData, WeatherState } from '@/types';
+import { useCallback, useState } from 'react';
+import useSWR from 'swr';
+import { fetchCoordinates } from '@/services/geocodingService';
+import { fetchForecast } from '@/services/forecastService';
+import { WeatherData } from '@/types';
 
 const DEFAULT_CITY = 'Sheffield';
 
-interface UseWeatherResult extends WeatherState {
-  refresh: () => void;
-  setCity: (city: string) => void;
+interface UseWeatherResult {
+  data: WeatherData | null;
+  isLoading: boolean;
+  error: string | null;
   city: string;
+  setCity: (city: string) => void;
+  refresh: () => void;
 }
 
-export function useWeather(
-  service: WeatherService,
-  initialCity: string = DEFAULT_CITY
-): UseWeatherResult {
+export function useWeather(initialCity: string = DEFAULT_CITY): UseWeatherResult {
   const [city, setCity] = useState(initialCity);
-  const [state, setState] = useState<WeatherState>({
-    data: null,
-    isLoading: false,
-    error: null,
-  });
 
-  const fetch = useCallback(
-    async (targetCity: string) => {
-      setState({ data: null, isLoading: true, error: null });
-      try {
-        const data: WeatherData = await service.fetchWeather(targetCity);
-        setState({ data, isLoading: false, error: null });
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to fetch weather';
-        setState({ data: null, isLoading: false, error: message });
-      }
-    },
-    [service]
+  const {
+    data: location,
+    error: geoError,
+    isLoading: geoLoading,
+  } = useSWR(city, fetchCoordinates);
+
+  const {
+    data,
+    error: forecastError,
+    isLoading: forecastLoading,
+    mutate,
+  } = useSWR(
+    // Key includes the location name so a new city always triggers a fresh fetch,
+    // even if coords happen to be identical (e.g. in tests).
+    location ?? null,
+    fetchForecast
   );
 
-  useEffect(() => {
-    fetch(city);
-  }, [city, fetch]);
+  const isLoading = geoLoading || forecastLoading;
+  const rawError = geoError ?? forecastError;
+  const error =
+    rawError instanceof Error ? rawError.message : null;
 
   const refresh = useCallback(() => {
-    fetch(city);
-  }, [city, fetch]);
+    void mutate();
+  }, [mutate]);
 
-  return { ...state, refresh, setCity, city };
+  return {
+    data: data ?? null,
+    isLoading,
+    error,
+    city,
+    setCity,
+  refresh,
+  };
 }
