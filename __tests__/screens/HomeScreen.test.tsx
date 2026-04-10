@@ -32,15 +32,29 @@ const mockFetchCoordinates = jest.mocked(geocodingService.fetchCoordinates);
 const mockFetchForecast = jest.mocked(forecastService.fetchForecast);
 
 beforeEach(() => {
+  jest.useFakeTimers();
   jest.clearAllMocks();
   mockFetchCoordinates.mockResolvedValue(mockLocation);
   mockFetchForecast.mockResolvedValue(mockWeatherData);
 });
 
-// Fresh SWR cache per test: no cross-test cache bleed, no deduplication, no retries.
+afterEach(() => {
+  jest.runAllTimers();
+  jest.useRealTimers();
+});
+
+// Fresh SWR cache per test: no cross-test cache bleed, no deduplication, no retries,
+// no focus/reconnect listeners. Fake timers prevent SWR's internal setTimeout calls
+// from keeping the Jest worker process alive after the test finishes.
 function renderHomeScreen() {
   return render(
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0, shouldRetryOnError: false }}>
+    <SWRConfig value={{
+      provider: () => new Map(),
+      dedupingInterval: 0,
+      shouldRetryOnError: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }}>
       <HomeScreen />
     </SWRConfig>
   );

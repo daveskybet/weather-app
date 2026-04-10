@@ -31,24 +31,36 @@ jest.mock('@/services/forecastService');
 const mockFetchCoordinates = jest.mocked(geocodingService.fetchCoordinates);
 const mockFetchForecast = jest.mocked(forecastService.fetchForecast);
 
-// Fresh SWR cache per test: no cross-test cache bleed, no deduplication, no retries.
-function createWrapper() {
-  return function SwrWrapper({ children }: { children: React.ReactNode }) {
-    return React.createElement(SWRConfig, {
-      value: { provider: () => new Map(), dedupingInterval: 0, shouldRetryOnError: false },
-    }, children);
-  };
+// Fresh SWR cache per test: no cross-test cache bleed, no deduplication, no retries,
+// no focus/reconnect listeners. Fake timers prevent SWR's internal setTimeout calls
+// from keeping the Jest worker process alive after the test finishes.
+function SwrWrapper({ children }: { children: React.ReactNode }) {
+  return React.createElement(SWRConfig, {
+    value: {
+      provider: () => new Map(),
+      dedupingInterval: 0,
+      shouldRetryOnError: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    },
+  }, children);
 }
 
 beforeEach(() => {
+  jest.useFakeTimers();
   jest.clearAllMocks();
   mockFetchCoordinates.mockResolvedValue(mockLocation);
   mockFetchForecast.mockResolvedValue(mockWeatherData);
 });
 
+afterEach(() => {
+  jest.runAllTimers();
+  jest.useRealTimers();
+});
+
 describe('useWeather', () => {
   it('starts with loading state and no data', async () => {
-    const { result } = renderHook(() => useWeather('London'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWeather('London'), { wrapper: SwrWrapper });
     expect(result.current.isLoading).toBe(true);
     expect(result.current.data).toBeNull();
     expect(result.current.error).toBeNull();
@@ -57,7 +69,7 @@ describe('useWeather', () => {
   });
 
   it('populates data after both fetches resolve', async () => {
-    const { result } = renderHook(() => useWeather('London'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWeather('London'), { wrapper: SwrWrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.data).toEqual(mockWeatherData);
@@ -68,7 +80,7 @@ describe('useWeather', () => {
 
   it('sets error when geocoding fails', async () => {
     mockFetchCoordinates.mockRejectedValue(new Error('City not found'));
-    const { result } = renderHook(() => useWeather('Atlantis'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWeather('Atlantis'), { wrapper: SwrWrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.data).toBeNull();
@@ -77,7 +89,7 @@ describe('useWeather', () => {
 
   it('sets error when forecast fetch fails', async () => {
     mockFetchForecast.mockRejectedValue(new Error('Forecast unavailable'));
-    const { result } = renderHook(() => useWeather('London'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWeather('London'), { wrapper: SwrWrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.data).toBeNull();
@@ -94,7 +106,7 @@ describe('useWeather', () => {
       .mockResolvedValueOnce(mockWeatherData)
       .mockResolvedValueOnce(newData);
 
-    const { result } = renderHook(() => useWeather('London'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWeather('London'), { wrapper: SwrWrapper });
     await waitFor(() => expect(result.current.data?.city).toBe('London'));
 
     act(() => { result.current.setCity('Paris'); });
@@ -105,13 +117,13 @@ describe('useWeather', () => {
   });
 
   it('uses default city "Sheffield" when none provided', async () => {
-    const { result } = renderHook(() => useWeather(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWeather(), { wrapper: SwrWrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(mockFetchCoordinates).toHaveBeenCalledWith('Sheffield');
   });
 
   it('exposes the current city', async () => {
-    const { result } = renderHook(() => useWeather('Tokyo'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useWeather('Tokyo'), { wrapper: SwrWrapper });
     expect(result.current.city).toBe('Tokyo');
     await waitFor(() => expect(result.current.isLoading).toBe(false));
   });
